@@ -43,7 +43,7 @@ The same proof works on the cube.
 ## What the app shows
 
 * The tree itself on the chosen domain: the true root (red star) and the estimator $H_K$
-  (black circles); the best root candidate is highlighted.
+  (black circles, root included); the best root candidate is highlighted.
 * A **verdict**:
   * ✅ **certified** as soon as $K \ge R$, where $R = \lvert\lbrace v : \psi_n(v) \le \psi_n(1)\rbrace\rvert$ is the
     pessimistic rank — then $1 \in H_K$ for *every* tie-breaking;
@@ -73,7 +73,7 @@ The app is **fully interactive** thanks to Streamlit caching, even at $n = 30{,}
 
 ## Installation
 
-Python dependencies: `streamlit`, `numpy`, `scipy`, `matplotlib`, `pandas`
+Python dependencies: `streamlit`, `numpy`, `scipy`, `numba`, `matplotlib`
 (see [`requirements.txt`](requirements.txt)).
 
 ```bash
