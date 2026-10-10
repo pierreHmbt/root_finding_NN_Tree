@@ -13,9 +13,9 @@ On the torus $\mathbb{T}^d = \mathbb{R}^d / \mathbb{Z}^d$ (periodic Euclidean di
 the cube $[0,1]^d$, the points $x_1, x_2, \dots$ are i.i.d. uniform. Each point connects to the
 closest of the points already present:
 
-$$p(j) = \arg\min_{i<j} d(x_i, x_j),
+$$p(j) = \arg\min_{i \lt j} d(x_i, x_j),
 \qquad
-T_n = \bigl([n],\, \{\{j, p(j)\}\}_{2 \le j \le n}\bigr).$$
+T_n = \bigl([n], \lbrace\lbrace j, p(j)\rbrace\rbrace_{2 \le j \le n}\bigr).$$
 
 The root is the first point, $1$.
 
@@ -24,7 +24,7 @@ The root is the first point, $1$.
 The **Jordan centrality** of a vertex is the size of the largest component obtained by
 deleting it:
 
-$$\psi_n(v) = \max\bigl\{|C| : C \text{ is a connected component of } T_n \setminus \{v\}\bigr\}.$$
+$$\psi_n(v) = \max\bigl\lbrace|C| : C \text{ is a connected component of } T_n \setminus \lbrace v\rbrace\bigr\rbrace.$$
 
 The estimator is $H_K$ = the $K$ vertices with the smallest values of $\psi_n$ (ties broken
 arbitrarily).
@@ -43,7 +43,7 @@ The same proof works on the cube.
 * The tree itself on the chosen domain: the true root (red star) and the estimator $H_K$
   (black circles); the best root candidate is highlighted.
 * A **verdict**:
-  * ✅ **certified** as soon as $K \ge R$, where $R = \#\{v : \psi_n(v) \le \psi_n(1)\}$ is the
+  * ✅ **certified** as soon as $K \ge R$, where $R = \lvert\lbrace v : \psi_n(v) \le \psi_n(1)\rbrace\rvert$ is the
     pessimistic rank — then $1 \in H_K$ for *every* tie-breaking;
   * ⚠️ the root happens to be in the displayed $H_K$ (favorable tie-breaking) but there is no
     guarantee;
@@ -65,7 +65,7 @@ The same proof works on the cube.
 | **Display options** | show edges, color vertices by $\psi_n$ |
 | **Prefix** $n_0$ | compute the estimator on the first $n_0$ points (nested trees) |
 
-The app is **fully interactive** thanks to Streamlit caching, even at $n = 30\,000$.
+The app is **fully interactive** thanks to Streamlit caching, even at $n = 30{,}000$.
 
 ---
 
@@ -102,12 +102,11 @@ $K = \widehat q_{1-\varepsilon}(R)$ (the empirical quantile). This is legitimate
 law of $R$ does not drift with $n$ — calibrate once for a given $(d, \text{domain})$, then keep
 $K$ fixed. Allow a margin for sampling fluctuations (binomial or DKW bound).
 
-For $d=2$ on the torus: $K \approx 6$ for $\varepsilon = 10\%$, $K \approx 20$ for
-$\varepsilon = 1\%$.
+For $d=2$ on the torus: $K \approx 6$ at a 10% error level, $K \approx 20$ at 1%.
 
 **Two useful quantities**, both shown in the app:
 
-* $R = \#\{v : \psi_n(v) \le \psi_n(1)\}$ — the **pessimistic rank**: the root lies in $H_K$
+* $R = \lvert\lbrace v : \psi_n(v) \le \psi_n(1)\rbrace\rvert$ — the **pessimistic rank**: the root lies in $H_K$
   for every tie-breaking **iff** $K \ge R$;
 * $K_{\rm cert}$ — the **certificate of Lemma 2**: the smallest *provable, tree-by-tree* $K$.
   It uses $\psi_n(1)$ and the descendant sets, hence the identity of the root; it is an analysis
