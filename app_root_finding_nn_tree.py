@@ -1,12 +1,12 @@
-"""Application Streamlit — récupérer la racine de l'arbre du plus proche voisin.
+"""Streamlit app — recovering the root of the nearest neighbor tree.
 
-On choisit le domaine (tore T^d ou cube [0,1]^d), la dimension d, le nombre de
-points tirés n, puis l'application simule l'arbre T_n, calcule la centralité de
-Jordan psi_n sur le graphe non étiqueté et affiche l'estimateur H_K de la
-racine : les K sommets de plus petite valeur de psi_n.
+Choose the domain (torus T^d or cube [0,1]^d), the dimension d and the number
+of sampled points n; the app then simulates the tree T_n, computes the Jordan
+centrality psi_n on the unlabeled graph and displays the root estimator H_K:
+the K vertices with the smallest values of psi_n.
 
-Lancement :
-    ~/.venv/bin/streamlit run app_racine_arbre_ppv.py
+Run with:
+    ~/.venv/bin/streamlit run app_root_finding_nn_tree.py
 """
 
 import time
@@ -26,17 +26,17 @@ from mpl_toolkits.mplot3d.art3d import Line3DCollection
 from scipy.spatial import cKDTree
 
 # ---------------------------------------------------------------------------
-# L'algorithme
+# The algorithm
 # ---------------------------------------------------------------------------
 
 
 def simulate_nn_tree(points, torus=True, k0=8, workers=-1):
-    """Arbre du plus proche voisin en ligne.
+    """Online nearest neighbor tree.
 
-    parents[j] = argmin_{i<j} d(x_i, x_j) ; distance euclidienne périodique
-    (``boxsize=1``) sur le tore, ordinaire sur le cube. Méthode exacte :
-    recherche kNN par lots, avec doublement de k pour les points sans
-    prédécesseur dans la liste.
+    parents[j] = argmin_{i<j} d(x_i, x_j); periodic Euclidean distance
+    (``boxsize=1``) on the torus, ordinary distance on the cube. Exact method:
+    batched kNN queries, doubling k for the points with no predecessor in
+    the list.
     """
     n = len(points)
     parents = np.full(n, -1, dtype=np.int64)
@@ -46,7 +46,7 @@ def simulate_nn_tree(points, torus=True, k0=8, workers=-1):
     todo = np.arange(1, n)
     k = min(k0, n - 1)
     while todo.size:
-        kq = min(k + 1, n)  # +1 : le point lui-même, à distance nulle
+        kq = min(k + 1, n)  # +1: the point itself, at distance zero
         _, idx = tree.query(points[todo], k=kq, workers=workers)
         idx = np.asarray(idx).reshape(todo.size, -1)
         mask = idx[:, 1:] < todo[:, None]
@@ -60,10 +60,10 @@ def simulate_nn_tree(points, torus=True, k0=8, workers=-1):
 
 
 def jordan_centrality(n, edges, return_subtree=False):
-    """psi(v) = taille de la plus grande composante de T - v, en O(n).
+    """psi(v) = size of the largest component of T - v, in O(n).
 
-    Enracine l'arbre en 0 (toute racine donne le même psi) et calcule les
-    tailles de sous-arbres sub : psi(v) = max(max_c sub(c), n - sub(v)).
+    Roots the tree at 0 (any root gives the same psi) and computes the
+    subtree sizes sub: psi(v) = max(max_c sub(c), n - sub(v)).
     """
     u = np.concatenate([edges[:, 0], edges[:, 1]])
     v = np.concatenate([edges[:, 1], edges[:, 0]])
@@ -107,22 +107,22 @@ def jordan_centrality(n, edges, return_subtree=False):
 
 
 def certified_k(psi, sub):
-    """Certificat du lemme 2 de la note : plus petit M tel que, avec
-    beta = 1 - psi(1)/n, on ait |D(v)| <= (3/4) beta n pour tout v > M.
-    Le lemme garantit alors rang(racine) <= M, donc 1 dans H_M quel que soit
-    le départage des ex æquo.
+    """Certificate from Lemma 2 of the note: smallest M such that, with
+    beta = 1 - psi(1)/n, |D(v)| <= (3/4) beta n for all v > M.
+    The lemma then guarantees rank(root) <= M, hence 1 in H_M whatever the
+    tie-breaking.
     """
     n = sub.size
     beta = 1.0 - psi[0] / n
     if beta <= 0.0:
         return n
-    # sommets v >= 2 (1-indexés) violant (B) : |D(v)| > (3/4) beta n
-    violateurs = np.flatnonzero(sub[1:] > 0.75 * beta * n) + 1   # labels 0-indexés
-    return int(violateurs.max()) + 1 if violateurs.size else 1   # M = plus grand v violant
+    # vertices v >= 2 (1-indexed) violating (B): |D(v)| > (3/4) beta n
+    violators = np.flatnonzero(sub[1:] > 0.75 * beta * n) + 1   # 0-indexed labels
+    return int(violators.max()) + 1 if violators.size else 1   # M = largest violating v
 
 
 # ---------------------------------------------------------------------------
-# Tracés
+# Plots
 # ---------------------------------------------------------------------------
 
 
@@ -131,11 +131,12 @@ def _point_size(n):
 
 
 def _edge_segments(xy, parents, torus):
-    """Segments d'arêtes, tracés périodiquement sur le tore.
+    """Edge segments, drawn periodically on the torus.
 
-    Chaque arête va du point à l'image du parent la plus proche ; si cette
-    image sort du cube [0,1]^d, la copie translatée par ±1 (par coordonnée)
-    est ajoutée : l'arête traverse le bord et réapparaît de l'autre côté.
+    Each edge goes from the point to the closest image of its parent; if that
+    image lies outside the cube [0,1]^d, the copy shifted by ±1 (per
+    coordinate) is added: the edge crosses the boundary and reappears on the
+    other side.
     """
     child = xy[1:].astype(float)
     head = xy[parents[1:]].astype(float)
@@ -156,7 +157,7 @@ def _edge_segments(xy, parents, torus):
 
 
 def _scatter_and_marks(ax, xy, psi, H, color_by_psi, s, is3d=False):
-    """Nuage de points (coloré par psi si demandé) + racine et H_K en évidence."""
+    """Scatter plot (colored by psi if requested) + root and H_K highlighted."""
     if color_by_psi:
         c = psi
         if is3d:
@@ -187,17 +188,17 @@ def _scatter_and_marks(ax, xy, psi, H, color_by_psi, s, is3d=False):
     if is3d:
         ax.scatter(
             [root[0]], [root[1]], [root[2]], s=200, marker="*", c="crimson",
-            zorder=5, depthshade=False, label="racine 1",
+            zorder=5, depthshade=False, label="root 1",
         )
     else:
         ax.scatter(
-            [root[0]], [root[1]], s=200, marker="*", c="crimson", zorder=5, label="racine 1"
+            [root[0]], [root[1]], s=200, marker="*", c="crimson", zorder=5, label="root 1"
         )
     return sc
 
 
 def draw_domain(ax, points, parents, psi, H, torus, d, show_edges, color_by_psi):
-    """Dessine les points, l'arbre et l'estimateur dans le domaine choisi."""
+    """Draws the points, the tree and the estimator in the chosen domain."""
     n = len(points)
     s = _point_size(n)
     sc = None
@@ -213,7 +214,7 @@ def draw_domain(ax, points, parents, psi, H, torus, d, show_edges, color_by_psi)
         sc = _scatter_and_marks(ax, xy, psi, H, color_by_psi, s)
         ax.set_aspect("equal")
         ax.axis("off")
-        ax.set_title(r"Tore $\mathbb{T}^1$ (cercle)")
+        ax.set_title(r"Torus $\mathbb{T}^1$ (circle)")
 
     elif d == 2:
         xy = points
@@ -225,7 +226,7 @@ def draw_domain(ax, points, parents, psi, H, torus, d, show_edges, color_by_psi)
         sc = _scatter_and_marks(ax, xy, psi, H, color_by_psi, s)
         ax.set(xlim=(-m, 1 + m), ylim=(-m, 1 + m), aspect="equal")
         ax.set_title(
-            r"Tore $\mathbb{T}^2$ (arêtes au plus court)" if torus else r"Cube $[0,1]^2$"
+            r"Torus $\mathbb{T}^2$ (shortest edges)" if torus else r"Cube $[0,1]^2$"
         )
 
     elif d == 3:
@@ -246,7 +247,7 @@ def draw_domain(ax, points, parents, psi, H, torus, d, show_edges, color_by_psi)
             zlabel="z",
         )
         ax.set_title(
-            r"Tore $\mathbb{T}^3$ (vue 3D)" if torus else r"Cube $[0,1]^3$ (vue 3D)"
+            r"Torus $\mathbb{T}^3$ (3D view)" if torus else r"Cube $[0,1]^3$ (3D view)"
         )
 
     else:  # d == 1, cube
@@ -266,7 +267,7 @@ def draw_domain(ax, points, parents, psi, H, torus, d, show_edges, color_by_psi)
         xy = np.column_stack([x, np.full(n, base)])
         sc = _scatter_and_marks(ax, xy, psi, H, color_by_psi, s)
         ax.set(xlim=(-0.02, 1.02), ylim=(-0.03, ytop))
-        ax.set_title(r"Cube $[0,1]$ (arêtes en arcs)")
+        ax.set_title(r"Cube $[0,1]$ (edges as arcs)")
 
     if sc is not None:
         ax.figure.colorbar(sc, ax=ax, shrink=0.75, label=r"$\psi_n$")
@@ -276,10 +277,10 @@ def draw_domain(ax, points, parents, psi, H, torus, d, show_edges, color_by_psi)
 
 
 def draw_psi(ax, psi, K, kcert, R):
-    """Valeurs de psi triées : rang du sommet 1 et bornes de l'algorithme."""
+    """Sorted psi values: rank of vertex 1 and bounds of the algorithm."""
     n = len(psi)
     order = np.argsort(psi, kind="stable")
-    ax.plot(np.arange(1, n + 1), psi[order], lw=1.5, color="steelblue", label=r"$\psi_n$ trié")
+    ax.plot(np.arange(1, n + 1), psi[order], lw=1.5, color="steelblue", label=r"sorted $\psi_n$")
     ax.axhline(psi[0], color="crimson", ls="--", lw=1.2, label=r"$\psi_n(1)$")
     beta = 1.0 - psi[0] / n
     ax.axhline(
@@ -300,30 +301,30 @@ def draw_psi(ax, psi, K, kcert, R):
         color="crimson",
     )
     ax.set(
-        xlabel=r"sommets triés par $\psi_n$ croissant",
+        xlabel=r"vertices sorted by increasing $\psi_n$",
         ylabel=r"$\psi_n(v)$",
-        title="Centralité de Jordan triée",
+        title="Sorted Jordan centrality",
     )
     ax.legend(fontsize=8)
     return ax
 
 
 # ---------------------------------------------------------------------------
-# Données (simulation mémorisée)
+# Data (cached simulation)
 # ---------------------------------------------------------------------------
 
 
 @st.cache_data(show_spinner=False)
-def simulate_cached(domaine, d, n, seed):
+def simulate_cached(domain, d, n, seed):
     rng = np.random.default_rng(seed)
     points = rng.random((n, int(d)))
-    parents = simulate_nn_tree(points, torus=(domaine == "tore"))
+    parents = simulate_nn_tree(points, torus=(domain == "torus"))
     return points, parents
 
 
 @st.cache_data(show_spinner=False)
-def analyse_cached(domaine, d, n, seed, n0):
-    points, parents = simulate_cached(domaine, d, n, seed)
+def analyse_cached(domain, d, n, seed, n0):
+    points, parents = simulate_cached(domain, d, n, seed)
     pts = points[:n0].copy()
     par = parents[:n0].copy()
     edges = np.column_stack([np.arange(1, n0), par[1:]])
@@ -334,17 +335,17 @@ def analyse_cached(domaine, d, n, seed, n0):
 
 
 # ---------------------------------------------------------------------------
-# Interface
+# User interface
 # ---------------------------------------------------------------------------
 
-st.set_page_config(page_title="Racine de l'arbre PPV — tore ou cube", layout="wide")
-st.title("Récupérer la racine de l'arbre du plus proche voisin")
+st.set_page_config(page_title="NN tree root — torus or cube", layout="wide")
+st.title("Recovering the root of the nearest neighbor tree")
 st.markdown(
-    "Les points arrivent i.i.d. uniformes ; chacun se connecte au plus proche des points "
-    "déjà présents (distance euclidienne, périodique sur le tore). La racine est le premier "
-    "point, $1$. L'algorithme classe les sommets par **centralité de Jordan** "
-    "$\\psi_n(v)$ (taille de la plus grande composante après suppression de $v$) et estime "
-    "la racine par $H_K$ : les $K$ sommets de plus petite valeur."
+    "Points arrive i.i.d. uniform; each one connects to the closest of the points "
+    "already present (Euclidean distance, periodic on the torus). The root is the first "
+    "point, $1$. The algorithm ranks the vertices by **Jordan centrality** "
+    "$\\psi_n(v)$ (size of the largest component after removing $v$) and estimates "
+    "the root by $H_K$: the $K$ vertices with the smallest values."
 )
 
 if "seed" not in st.session_state:
@@ -356,29 +357,29 @@ def _new_draw():
 
 
 with st.sidebar:
-    st.header("Paramètres")
-    domaine_label = st.radio(
-        "Domaine", [r"Tore $\mathbb{T}^d$", r"Cube $[0,1]^d$"], index=0, key="domaine"
+    st.header("Parameters")
+    domain_label = st.radio(
+        "Domain", [r"Torus $\mathbb{T}^d$", r"Cube $[0,1]^d$"], index=0, key="domain"
     )
-    domaine = "tore" if domaine_label.startswith("Tore") else "cube"
+    domain = "torus" if domain_label.startswith("Torus") else "cube"
     d = st.selectbox("Dimension $d$", [1, 2, 3], index=1, key="dim")
     n = st.slider(
-        "Nombre de points tirés $n$",
+        "Number of sampled points $n$",
         min_value=50,
         max_value=30000,
         value=2000,
         step=50,
         key="n",
     )
-    K = st.slider("Taille de l'estimateur $H_K$", 1, 100, 10, key="k")
-    st.number_input("Graine", min_value=0, max_value=10**9, step=1, key="seed")
-    st.button("🎲 Nouveau tirage", on_click=_new_draw)
+    K = st.slider("Size of the estimator $H_K$", 1, 100, 10, key="k")
+    st.number_input("Seed", min_value=0, max_value=10**9, step=1, key="seed")
+    st.button("🎲 New draw", on_click=_new_draw)
 
-    with st.expander("Affichage et préfixe"):
-        show_edges = st.checkbox("Afficher les arêtes", value=True, key="edges")
-        color_psi = st.checkbox(r"Colorer les points par $\psi_n$", value=False, key="color_psi")
+    with st.expander("Display and prefix"):
+        show_edges = st.checkbox("Show edges", value=True, key="edges")
+        color_psi = st.checkbox(r"Color points by $\psi_n$", value=False, key="color_psi")
         n0 = st.slider(
-            "Points utilisés pour le calcul (préfixe)",
+            "Points used for the computation (prefix)",
             min_value=20,
             max_value=n,
             value=n,
@@ -386,8 +387,8 @@ with st.sidebar:
             key=f"n0_{n}",
         )
 
-with st.spinner("Simulation de l'arbre et calcul de $\\psi_n$..."):
-    pts, par, psi, sub, dt_psi = analyse_cached(domaine, d, n, st.session_state.seed, n0)
+with st.spinner("Simulating the tree and computing $\\psi_n$..."):
+    pts, par, psi, sub, dt_psi = analyse_cached(domain, d, n, st.session_state.seed, n0)
 
 n0 = len(pts)
 R = int(np.count_nonzero(psi <= psi[0]))
@@ -397,91 +398,91 @@ root_in_H = bool(0 in H)
 kcert = certified_k(psi, sub)
 v_min = int(np.argmin(psi))
 
-domaine_txt = r"tore $\mathbb{T}^d$" if domaine == "tore" else r"cube $[0,1]^d$"
+domain_txt = r"torus $\mathbb{T}^d$" if domain == "torus" else r"cube $[0,1]^d$"
 st.caption(
-    f"Domaine : {domaine_txt} · d = {d} · points utilisés : {n0} (sur {n} tirés) · "
-    f"calcul de $\\psi_n$ : {dt_psi * 1000:.0f} ms"
+    f"Domain: {domain_txt} · d = {d} · points used: {n0} (out of {n} sampled) · "
+    f"$\\psi_n$ computation: {dt_psi * 1000:.0f} ms"
 )
 
 col1, col2, col3, col4 = st.columns(4)
-col1.metric("Rang pessimiste $R$", R, help="nombre de sommets v tels que ψ(v) ≤ ψ(1)")
-col2.metric("K choisi", K_eff)
-col3.metric("$K_{\\rm cert}$ (lemme 2)", kcert, help="K prouvable pour cet arbre, plus conservateur")
+col1.metric("Pessimistic rank $R$", R, help="number of vertices v such that ψ(v) ≤ ψ(1)")
+col2.metric("Chosen K", K_eff)
+col3.metric("$K_{\\rm cert}$ (Lemma 2)", kcert, help="provable K for this tree, more conservative")
 col4.metric("$\\psi_n(1)/n$", f"{psi[0] / n0:.2f}")
 
 if K_eff >= R:
     st.success(
-        f"✅ La racine est **certifiée** dans $H_K$ : K = {K_eff} ≥ R = {R}, "
-        "donc $1 \\in H_K$ quel que soit le départage des ex æquo."
+        f"✅ The root is **certified** to be in $H_K$: K = {K_eff} ≥ R = {R}, "
+        "hence $1 \\in H_K$ whatever the tie-breaking."
     )
 elif root_in_H:
     st.warning(
-        f"⚠️ Le sommet 1 figure dans le $H_K$ affiché (départage favorable), mais "
-        f"K = {K_eff} < R = {R} : aucune garantie."
+        f"⚠️ Vertex 1 is in the displayed $H_K$ (favorable tie-breaking), but "
+        f"K = {K_eff} < R = {R}: no guarantee."
     )
 else:
     st.error(
-        f"❌ La racine n'est pas dans $H_K$ : K = {K_eff} < R = {R}. "
-        "La note garantit le succès pour K ≥ R sur cet arbre."
+        f"❌ The root is not in $H_K$: K = {K_eff} < R = {R}. "
+        "Success is guaranteed for K ≥ R on this tree."
     )
 
 fig = plt.figure(figsize=(13.5, 5.4))
 ax1 = fig.add_subplot(1, 2, 1, projection="3d") if d == 3 else fig.add_subplot(1, 2, 1)
-draw_domain(ax1, pts, par, psi, H, domaine == "tore", d, show_edges, color_psi)
+draw_domain(ax1, pts, par, psi, H, domain == "torus", d, show_edges, color_psi)
 ax2 = fig.add_subplot(1, 2, 2)
 draw_psi(ax2, psi, K_eff, kcert, R)
 fig.tight_layout()
 st.pyplot(fig)
 plt.close(fig)
 
-st.subheader("Estimateur fourni par l'algorithme")
+st.subheader("Estimator returned by the algorithm")
 if v_min == 0:
-    st.markdown("Le sommet à plus petite centralité est **le sommet 1 : la racine elle-même**.")
+    st.markdown("The vertex with the smallest centrality is **vertex 1: the root itself**.")
 else:
     st.markdown(
-        f"Le sommet à plus petite centralité est {v_min + 1} — la racine (sommet 1) est "
-        f"classée {R}ᵉ dans l'ordre pessimiste."
+        f"The vertex with the smallest centrality is {v_min + 1} — the root (vertex 1) is "
+        f"ranked {R} in the pessimistic order."
     )
 
 rows = [
     {
-        "sommet": int(v) + 1,
+        "vertex": int(v) + 1,
         "ψ": int(psi[v]),
         "ψ/n": round(float(psi[v]) / n0, 3),
-        "est la racine": "★" if v == 0 else "",
+        "is the root": "★" if v == 0 else "",
     }
     for v in H
 ]
 st.dataframe(pd.DataFrame(rows), hide_index=True)
 
-with st.expander("Comment ça marche ? (et code de l'algorithme)"):
+with st.expander("How does it work? (and algorithm code)"):
     st.markdown(
         r"""
-**Le modèle.** Sur le tore $\mathbb{T}^d=\mathbb{R}^d/\mathbb{Z}^d$ (distance euclidienne
-modulo $\mathbb{Z}^d$) ou sur le cube $[0,1]^d$, les points $x_1,x_2,\dots$ sont i.i.d.
-uniformes. Pour $j\ge 2$, $p(j)=\arg\min_{i<j} d(x_i,x_j)$, et $T_n$ a pour arêtes
+**The model.** On the torus $\mathbb{T}^d=\mathbb{R}^d/\mathbb{Z}^d$ (Euclidean distance
+modulo $\mathbb{Z}^d$) or on the cube $[0,1]^d$, the points $x_1,x_2,\dots$ are i.i.d.
+uniform. For $j\ge 2$, $p(j)=\arg\min_{i<j} d(x_i,x_j)$, and $T_n$ has edges
 $\{j,p(j)\}$.
 
-**La statistique.** $\psi_n(v)$ = taille de la plus grande composante connexe de
-$T_n\setminus\{v\}$. Elle ne dépend que du graphe non étiqueté et se calcule en $O(n)$
-(tailles de sous-arbres, enracinement arbitraire). L'estimateur est
-$H_K$ = les $K$ plus petites valeurs.
+**The statistic.** $\psi_n(v)$ = size of the largest connected component of
+$T_n\setminus\{v\}$. It depends only on the unlabeled graph and is computed in $O(n)$
+(subtree sizes, arbitrary rooting). The estimator is
+$H_K$ = the $K$ smallest values.
 
-**Le rang pessimiste.** $R=\#\{v:\psi_n(v)\le\psi_n(1)\}$. Si $K\ge R$, la racine est
-dans $H_K$ pour *tout* départage des ex æquo ; c'est exactement ce que mesure la table
-ci-dessus et ce que suit le curseur « préfixe » (les arbres sont emboîtés : le préfixe
-est l'arbre des $n_0$ premiers points).
+**The pessimistic rank.** $R=\#\{v:\psi_n(v)\le\psi_n(1)\}$. If $K\ge R$, the root is
+in $H_K$ for *any* tie-breaking; this is exactly what the table above measures and
+what the "prefix" slider tracks (the trees are nested: the prefix is the tree of the
+first $n_0$ points).
 
-**Implémentation.** Simulation exacte de $T_n$ en $\tilde O(n)$ : plus proches voisins
-par lots dans un arbre KD (`boxsize=1` pour le tore), avec raffinement de $k$. Calcul de
-$\psi_n$ sur les seules arêtes, sans géométrie.
+**Implementation.** Exact simulation of $T_n$ in $\tilde O(n)$: batched nearest neighbor
+queries in a KD-tree (`boxsize=1` for the torus), with refinement of $k$. $\psi_n$ is
+computed from the edges alone, without geometry.
 """
     )
     st.code(
         """def jordan_centrality(n, edges, return_subtree=False):
     ...
     sub = np.ones(n, dtype=np.int64)
-    for x in order[:0:-1]:          # ordre inverse du parcours en largeur
+    for x in order[:0:-1]:          # reverse breadth-first order
         sub[parent[x]] += sub[x]
     psi = np.maximum(maxchild, n - sub)
     return (psi, sub) if return_subtree else psi""",
