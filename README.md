@@ -5,7 +5,7 @@ nearest-neighbor tree from the graph alone**. Points arrive i.i.d. uniform; each
 connects to its nearest predecessor. The first point ("Adam") is the root, and the goal is
 to find it **without any labels and without using the geometry** — from the unlabeled tree.
 
-> 🔗 **Live app:** <https://rootrandomnntree-dqmfewsappzxcfkcfdbqbse.streamlit.app/>
+> 🔗 **Live app:** <https://root-random-nn-tree.streamlit.app//>
 
 ---
 
@@ -90,7 +90,7 @@ streamlit run app_root_finding_nn_tree.py
 
 It opens at <http://localhost:8501>.
 
-> Or use the hosted version: <https://rootrandomnntree-dqmfewsappzxcfkcfdbqbse.streamlit.app/>
+> Or use the hosted version: <https://root-random-nn-tree.streamlit.app//>
 
 ---
 
