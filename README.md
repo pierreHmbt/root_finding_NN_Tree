@@ -85,7 +85,7 @@ python -m pip install -r requirements.txt
 ## Run
 
 ```bash
-streamlit run streamlit_app.py
+streamlit run app_root_finding_nn_tree.py
 ```
 
 It opens at <http://localhost:8501>.

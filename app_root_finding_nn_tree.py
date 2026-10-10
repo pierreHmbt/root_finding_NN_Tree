@@ -6,7 +6,7 @@ centrality psi_n on the unlabeled graph and displays the root estimator H_K:
 the K vertices with the smallest values of psi_n.
 
 Run with:
-    streamlit run streamlit_app.py
+    streamlit run app_root_finding_nn_tree.py
 """
 
 from __future__ import annotations
