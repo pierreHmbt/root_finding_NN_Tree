@@ -206,14 +206,14 @@ def draw_domain(
     sc = ax.scatter(*xy.T, s=s, label=None if color_by_psi else "points", **style)
     ax.scatter(
         *xy[H].T,
-        s=3.0 * s + 220,
+        s=2.7 * s + 199,
         facecolors="none",
         edgecolors=fg,
         linewidths=1.3,
         zorder=6,
         label=r"$H_K$",
     )
-    ax.scatter(*xy[:1].T, s=140, marker="*", c="crimson", zorder=5, label="root 1")
+    ax.scatter(*xy[:1].T, s=154, marker="*", c="crimson", zorder=5, label="root 1")
 
     if color_by_psi:
         ax.figure.colorbar(sc, ax=ax, shrink=0.75, label=r"$\psi_n$")
