@@ -5,6 +5,8 @@ nearest-neighbor tree from the graph alone**. Points arrive i.i.d. uniform; each
 connects to its nearest predecessor. The first point ("Adam") is the root, and the goal is
 to find it **without any labels and without using the geometry** — from the unlabeled tree.
 
+> 🔗 **Live app:** <https://rootrandomnntree-dqmfewsappzxcfkcfdbqbse.streamlit.app/>
+
 ---
 
 ## The model
@@ -71,21 +73,24 @@ The app is **fully interactive** thanks to Streamlit caching, even at $n = 30{,}
 
 ## Installation
 
-Python dependencies: `numpy`, `scipy`, `matplotlib`, `streamlit`.
+Python dependencies: `streamlit`, `numpy`, `scipy`, `matplotlib`, `pandas`
+(see [`requirements.txt`](requirements.txt)).
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install numpy scipy matplotlib streamlit
+python -m pip install -r requirements.txt
 ```
 
 ## Run
 
 ```bash
-streamlit run app_racine_arbre_ppv.py
+streamlit run app_root_finding_nn_tree.py
 ```
 
 It opens at <http://localhost:8501>.
+
+> Or use the hosted version: <https://rootrandomnntree-dqmfewsappzxcfkcfdbqbse.streamlit.app/>
 
 ---
 
