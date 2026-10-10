@@ -206,18 +206,18 @@ def draw_domain(
     sc = ax.scatter(*xy.T, s=s, label=None if color_by_psi else "points", **style)
     ax.scatter(
         *xy[H].T,
-        s=2.0 * s + 24,
+        s=3.0 * s + 220,
         facecolors="none",
         edgecolors=fg,
-        linewidths=1.0,
-        zorder=4,
+        linewidths=1.3,
+        zorder=6,
         label=r"$H_K$",
     )
-    ax.scatter(*xy[:1].T, s=200, marker="*", c="crimson", zorder=5, label="root 1")
+    ax.scatter(*xy[:1].T, s=140, marker="*", c="crimson", zorder=5, label="root 1")
 
     if color_by_psi:
         ax.figure.colorbar(sc, ax=ax, shrink=0.75, label=r"$\psi_n$")
-    ax.legend(fontsize=8, loc="best")
+    ax.legend(fontsize=12, loc="best")
 
 
 def draw_psi(ax, psi: np.ndarray, K: int, kcert: int, R: int):
@@ -260,7 +260,7 @@ def draw_psi(ax, psi: np.ndarray, K: int, kcert: int, R: int):
         ylabel=r"$\psi_n(v)$",
         title="Sorted Jordan centrality",
     )
-    ax.legend(fontsize=8)
+    ax.legend(fontsize=12)
 
 
 # ---------------------------------------------------------------------------
