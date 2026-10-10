@@ -467,10 +467,6 @@ $T_n\setminus\{v\}$. Elle ne dépend que du graphe non étiqueté et se calcule 
 (tailles de sous-arbres, enracinement arbitraire). L'estimateur est
 $H_K$ = les $K$ plus petites valeurs.
 
-**Le résultat** (note de P. Humbert et F. Laplante, 2026). Pour tout $d\ge 1$ et
-$\varepsilon\in(0,1)$, il existe $K=K(d,\varepsilon)$ — indépendant de $n$ — tel que
-$\liminf_n \mathbb{P}(1\in H_K)\ge 1-\varepsilon$ ; la même preuve vaut sur le cube.
-
 **Le rang pessimiste.** $R=\#\{v:\psi_n(v)\le\psi_n(1)\}$. Si $K\ge R$, la racine est
 dans $H_K$ pour *tout* départage des ex æquo ; c'est exactement ce que mesure la table
 ci-dessus et ce que suit le curseur « préfixe » (les arbres sont emboîtés : le préfixe
