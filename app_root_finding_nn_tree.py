@@ -203,7 +203,7 @@ def draw_domain(
 
     s = float(np.clip(4000.0 / len(points), 2.0, 35.0))
     style = {"c": psi, "cmap": "cool"} if color_by_psi else {"color": "steelblue"}
-    sc = ax.scatter(*xy.T, s=s, label=None if color_by_psi else "points", **style)
+    sc = ax.scatter(*xy.T, s=s, **style)
     ax.scatter(
         *xy[H].T,
         s=2.7 * s + 199,
